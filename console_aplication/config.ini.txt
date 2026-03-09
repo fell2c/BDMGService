@@ -1,0 +1,12 @@
+[Seguranca]
+ApiKey=minha-chave-secreta
+
+[Banco]
+Server=localhost
+Porta=1433
+Database=BDMG
+Autenticacao=Windows
+Encrypt=No
+TrustServerCertificate=Yes
+Usuario=
+Senha=
