@@ -1,20 +1,14 @@
-unit uValidacoes;
+﻿unit uValidacoes;
 
 interface
 
+uses
+  uModeloTarefa;
+
 type
-
-  TPrioridade = (Baixa, Media, Alta);
-  TStatus = (Pendente, EmAndamento, Concluido);
-
   TValidacoes = class
   public
-    // Usado no POST
-//    class procedure ValidarCriacaoTarefa(const pTitulo, pDescricao: string; const pPrioridade: TPrioridade);
-//    // Usado no PUT
-//    class procedure ValidarAtualizacaoStatus(const pTitulo, pDescricao: string; const pStatusID: TStatus);
-//    // Regras compartilhadas entre POST e PUT
-    class procedure ValidarCamposTexto(const pTitulo, pDescricao: string);
+    class procedure ValidarTarefa(pTarefa: TTarefa);
   end;
 
 implementation
@@ -22,32 +16,23 @@ implementation
 uses
   SysUtils;
 
-class procedure TValidacoes.ValidarCamposTexto(const pTitulo, pDescricao: string);
+class procedure TValidacoes.ValidarTarefa(pTarefa: TTarefa);
 begin
-  if Trim(pTitulo) = '' then
-    raise Exception.Create('Título é obrigatório');
+  if Trim(pTarefa.Titulo) = '' then
+    raise Exception.Create('Título é obrigatório.');
 
-  if Length(pTitulo) > 100 then
-    raise Exception.Create('Título excede o limite de 100 caracteres (%d informados)');
+  if Length(Trim(pTarefa.Titulo)) > 100 then
+    raise Exception.Create('Título excede o limite de 100 caracteres.');
 
-  if Length(pDescricao) > 200 then
-    raise Exception.Create('Descrição excede o limite de 200 caracteres (%d informados)');
+  if Length(Trim(pTarefa.Descricao)) > 200 then
+    raise Exception.Create('Descrição excede o limite de 200 caracteres.');
+
+  if pTarefa.DataCriacao = 0 then
+    raise Exception.Create('Obrigatório informar Data de Criação.');
+
+  if (pTarefa.StatusID = 3) and (pTarefa.DataConclusao = 0) then
+    raise Exception.Create('Obrigatório informar Data de Conclusão.');
+
 end;
-
-//class procedure TValidacoes.ValidarCriacaoTarefa(const pTitulo, pDescricao: string; const pPrioridade: TPrioridade);
-//begin
-//  ValidarCamposTexto(pTitulo, pDescricao);
-//
-//  if not (pPrioridade in [Baixa, Media, Alta]) then
-//    raise Exception.Create('Prioridade deve ser Baixa, Media ou Alta');
-//end;
-//
-//class procedure TValidacoes.ValidarAtualizacaoStatus(const pTitulo, pDescricao: string; const pStatusID: TStatus);
-//begin
-//  ValidarCamposTexto(pTitulo, pDescricao);
-//
-//  if not (pStatusID in [Pendente, EmAndamento, Concluido]) then
-//    raise Exception.Create('StatusId deve ser Pendente, Em Andamento ou Concluído');
-//end;
 
 end.

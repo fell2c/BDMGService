@@ -13,7 +13,8 @@ type
     FID: Integer;
     FTitulo: string;
     FDescricao: string;
-    FStatusId: Integer;
+    FStatusID: Integer;
+    FStatusDescricao: string;
     FPrioridade: Integer;
     FDataCriacao: TDateTime;
     FDataConclusao: TDateTime;
@@ -21,7 +22,8 @@ type
     property Id: Integer read FID write FID;
     property Titulo: string read FTitulo write FTitulo;
     property Descricao: string read FDescricao write FDescricao;
-    property StatusId: Integer read FStatusId write FStatusId;
+    property StatusId: Integer read FStatusID write FStatusID;
+    property StatusDescricao: string read FStatusDescricao write FStatusDescricao;
     property Prioridade: Integer read FPrioridade write FPrioridade;  // 1, 2 ou 3
     property DataCriacao: TDateTime read FDataCriacao write FDataCriacao;
     property DataConclusao: TDateTime read FDataConclusao write FDataConclusao;

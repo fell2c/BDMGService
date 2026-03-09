@@ -2,15 +2,17 @@ object GerenciadorTarefas: TGerenciadorTarefas
   Left = 0
   Top = 0
   BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
   Caption = 'Gerenciador Tarefas'
-  ClientHeight = 410
-  ClientWidth = 928
+  ClientHeight = 528
+  ClientWidth = 1156
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
+  Position = poScreenCenter
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -43,19 +45,19 @@ object GerenciadorTarefas: TGerenciadorTarefas
     OnClick = btnRemoverTarefaClick
   end
   object btnIndicadoresTarefas: TButton
-    Left = 845
-    Top = 377
+    Left = 1076
+    Top = 497
     Width = 75
     Height = 25
     Caption = 'Indicadores'
-    TabOrder = 3
+    TabOrder = 4
     OnClick = btnIndicadoresTarefasClick
   end
   object lvTarefas: TListView
     Left = 4
     Top = 40
-    Width = 916
-    Height = 330
+    Width = 1147
+    Height = 451
     Columns = <
       item
         Caption = 'ID'
@@ -87,7 +89,7 @@ object GerenciadorTarefas: TGerenciadorTarefas
     GridLines = True
     ReadOnly = True
     RowSelect = True
-    TabOrder = 4
+    TabOrder = 3
     ViewStyle = vsReport
   end
 end

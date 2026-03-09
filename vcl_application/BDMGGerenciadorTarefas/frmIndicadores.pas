@@ -8,13 +8,12 @@ uses
 
 type
   TformIndicadores = class(TForm)
-    pnlIndicadores: TPanel;
     lblTotalTarefas: TLabel;
+    lblValorTarefasConcluidas7d: TLabel;
+    lblValorMediaPrioridade: TLabel;
+    lblValorTotalTarefas: TLabel;
     lblMediaTarefas: TLabel;
     lblConcluidas7d: TLabel;
-    lblValorTotalTarefas: TLabel;
-    lblValorMediaPrioridade: TLabel;
-    lblValorTarefasConcluidas7d: TLabel;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }
@@ -35,9 +34,18 @@ begin
 end;
 
 procedure TformIndicadores.PreencherIndicadores(const pTotal, pMedia, pConcluidas: Integer);
+var
+  lMedia: string;
 begin
   lblValorTotalTarefas.Caption := pTotal.ToString;
-  lblValorMediaPrioridade.Caption := pMedia.ToString;
+
+  case pMedia of
+    1: lMedia := 'Baixa';
+    2: lMedia := 'Média';
+    3: lMedia := 'Alta';
+  end;
+
+  lblValorMediaPrioridade.Caption := lMedia;
   lblValorTarefasConcluidas7d.Caption := pConcluidas.ToString;
 end;
 

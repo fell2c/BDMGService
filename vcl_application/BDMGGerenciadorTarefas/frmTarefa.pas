@@ -32,6 +32,7 @@ type
     FTarefaID: Integer;
 
     procedure CarregarTarefa;
+    function GetDataPreenchida(pMaskedEdit: TMaskEdit): Boolean;
   public
     property TarefaID: Integer read FTarefaID write FTarefaID;
   end;
@@ -62,9 +63,14 @@ begin
 
     lTarefa.Titulo := Trim(edtTitulo.Text);
     lTarefa.Descricao := Trim(memDescricao.Text);
-    lTarefa.StatusId := cbbStatus.ItemIndex + 1;
+    lTarefa.StatusID := cbbStatus.ItemIndex + 1;
     lTarefa.Prioridade := cbbPrioridade.ItemIndex + 1;
-    lTarefa.DataCriacao := Now;
+
+    if GetDataPreenchida(edtDataCriacao) then
+      lTarefa.DataCriacao := StrToDate(edtDataCriacao.EditText);
+
+    if GetDataPreenchida(edtDataConclusao) then
+      lTarefa.DataConclusao := StrToDate(edtDataConclusao.EditText);
 
     if TarefaID > 0 then
     begin
@@ -126,6 +132,14 @@ begin
   end;
 end;
 
+function TformTarefa.GetDataPreenchida(pMaskedEdit: TMaskEdit): Boolean;
+var
+  lSomenteNumeros: string;
+begin
+  lSomenteNumeros := pMaskedEdit.EditText.Replace('/', '').Replace('_', '').Trim;
+  Result := not lSomenteNumeros.IsEmpty;
+end;
+
 procedure TformTarefa.CarregarTarefa;
 var
   lResponse: IResponse;
@@ -150,7 +164,7 @@ begin
 
       lDataConclusao := lJSON.GetValue('dataConclusao');
 
-      if not (lDataConclusao is TJSONNull) then
+      if Assigned(lDataConclusao) then
         edtDataConclusao.Text := lJSON.GetValue<string>('dataConclusao');
     finally
       lJSON.Free;

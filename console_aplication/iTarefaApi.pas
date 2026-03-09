@@ -14,8 +14,8 @@ type
     function GetById(const pID: Integer): TTarefa;
     function GetIndicadoresTarefas: TIndicadoresTarefas;
     procedure Add(pTarefa: TTarefa);
-    procedure UpdateStatus(const pID, pStatusID: Integer);
-    procedure Delete(const pID: Integer);
+    procedure Update(pTarefa: TTarefa);
+    procedure Delete(const pIDTarefa: Integer);
   end;
 
 implementation

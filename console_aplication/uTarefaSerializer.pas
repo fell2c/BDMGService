@@ -22,16 +22,15 @@ var
 begin
   lObj := TJSONObject.Create;
   try
-    lObj.AddPair('id', TJSONNumber.Create(pTarefa.Id));
+    lObj.AddPair('id', pTarefa.Id.ToString);
     lObj.AddPair('titulo', pTarefa.Titulo);
     lObj.AddPair('descricao', pTarefa.Descricao);
-    lObj.AddPair('prioridade', TJSONNumber.Create(pTarefa.Prioridade));
-    lObj.AddPair('statusID', TJSONNumber.Create(pTarefa.StatusID));
+    lObj.AddPair('prioridade', pTarefa.Prioridade.ToString);
+    lObj.AddPair('statusID', pTarefa.StatusID.ToString);
+    lObj.AddPair('statusDescricao', pTarefa.StatusDescricao);
     lObj.AddPair('dataCriacao', FormatDateTime('dd/mm/yyyy', pTarefa.DataCriacao));
 
-    if pTarefa.DataConclusao = 0 then
-      lObj.AddPair('dataConclusao', TJSONNull.Create)
-    else
+    if pTarefa.DataConclusao > 0 then
       lObj.AddPair('dataConclusao', FormatDateTime('dd/mm/yyyy', pTarefa.DataConclusao));
 
     Result := lObj.ToString;

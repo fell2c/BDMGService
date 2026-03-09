@@ -1,8 +1,9 @@
-unit uAutenticacao;
+﻿unit uAutenticacao;
 
 interface
 
 uses
+  System.SysUtils,
   Horse,
   uConfig;
 
@@ -11,12 +12,13 @@ procedure MiddlewareAPIKey(Req: THorseRequest; Res: THorseResponse; Next: TNextP
 implementation
 
 procedure MiddlewareAPIKey(Req: THorseRequest; Res: THorseResponse; Next: TNextProc);
+var
+  lApiKey: string;
 begin
-  if Req.Headers['X-API-KEY'] <> TConfig.APIKey then
-  begin
-    Res.Status(THTTPStatus.Unauthorized).Send('{"erro":"Não autorizado"}');
-    Exit;
-  end;
+  lApiKey := Req.Headers['X-API-KEY'];
+
+  if (lApiKey = string.Empty) or (lApiKey <> TConfig.APIKey) then
+    raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('API Key inválida ou não informada');
 
   Next;
 end;

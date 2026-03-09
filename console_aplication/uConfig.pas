@@ -38,7 +38,7 @@ var
 begin
   lIni := TIniFile.Create(GetCaminhoArquivo);
   try
-    Result := lIni.ReadString('Seguranca', 'ApiKey', '');
+    Result := lIni.ReadString('Seguranca', 'ApiKey', 'minha-chave-secreta');
   finally
     lIni.Free;
   end;

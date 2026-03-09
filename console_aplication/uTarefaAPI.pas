@@ -20,17 +20,17 @@ type
     constructor Create(AFactory: IConexaoFactory);
 
     function GetAll: TObjectList<TTarefa>;
-    function GetById(const pID: Integer): TTarefa;
+    function GetById(const pIDTarefa: Integer): TTarefa;
     function GetIndicadoresTarefas: TIndicadoresTarefas;
     procedure Add(pTarefa: TTarefa);
-    procedure UpdateStatus(const pID, pStatusID: Integer);
-    procedure Delete(const pID: Integer);
+    procedure Update(pTarefa: TTarefa);
+    procedure Delete(const pIDTarefa: Integer);
   end;
 
 implementation
 
 uses
-  SysUtils,
+  System.SysUtils,
   FireDAC.Stan.Def,
   FireDac.Stan.Param,
   Data.DB;
@@ -59,8 +59,10 @@ begin
       lQry.Connection := lConexao;
 
       lQry.SQL.Text :=
-        ' SELECT t.ID, t.Titulo, t.Descricao, t.StatusId, t.Prioridade, t.DataCriacao, t.DataConclusao ' + sLineBreak +
-        ' FROM Tarefas t ';
+        ' SELECT t.ID, t.Titulo, t.Descricao, t.StatusID, t.Prioridade, t.DataCriacao, ' + sLineBreak +
+        '   t.DataConclusao, s.Descricao as StatusDescricao ' + sLineBreak +
+        ' FROM Tarefas t ' + sLineBreak +
+        ' LEFT JOIN StatusTarefas s on s.ID = t.StatusID ' + sLineBreak;
 
       lQry.Open;
       while not lQry.Eof do
@@ -86,7 +88,8 @@ begin
   lTarefa.Id := pQry.FieldByName('ID').AsInteger;
   lTarefa.Titulo := pQry.FieldByName('Titulo').AsString;
   lTarefa.Descricao := pQry.FieldByName('Descricao').AsString;
-  lTarefa.StatusId := pQry.FieldByName('StatusId').AsInteger;
+  lTarefa.StatusID := pQry.FieldByName('StatusID').AsInteger;
+  lTarefa.StatusDescricao := pQry.FieldByName('StatusDescricao').AsString;
   lTarefa.Prioridade := pQry.FieldByName('Prioridade').AsInteger;
   lTarefa.DataCriacao := pQry.FieldByName('DataCriacao').AsDateTime;
 
@@ -98,7 +101,7 @@ begin
   Result := lTarefa;
 end;
 
-function TTarefaAPI.GetById(const pID: Integer): TTarefa;
+function TTarefaAPI.GetById(const pIDTarefa: Integer): TTarefa;
 var
   lConexao: TFDConnection;
   lQry: TFDQuery;
@@ -112,11 +115,13 @@ begin
       lQry.Connection := lConexao;
 
       lQry.SQL.Text :=
-        ' SELECT t.ID, t.Titulo, t.Descricao, t.StatusId, t.Prioridade, t.DataCriacao, t.DataConclusao ' + sLineBreak +
+        ' SELECT t.ID, t.Titulo, t.Descricao, t.StatusID, t.Prioridade, t.DataCriacao, ' + sLineBreak +
+        '   t.DataConclusao, s.Descricao as StatusDescricao ' + sLineBreak +
         ' FROM Tarefas t ' + sLineBreak +
+        ' LEFT JOIN StatusTarefas s on s.ID = t.StatusID ' + sLineBreak +
         ' WHERE t.ID = :ID';
 
-      lQry.ParamByName('ID').AsInteger := pID;
+      lQry.ParamByName('ID').AsInteger := pIDTarefa;
       lQry.Open;
 
       if not lQry.IsEmpty then
@@ -141,15 +146,16 @@ begin
       lQry.Connection := lConexao;
 
       lQry.SQL.Text :=
-        ' INSERT INTO Tarefas (Titulo, Descricao, StatusId, Prioridade) ' + sLineBreak +
-        ' VALUES (:Titulo, :Descricao, :StatusId, :Prioridade)';
+        ' INSERT INTO Tarefas (Titulo, Descricao, StatusID, Prioridade, DataCriacao) ' + sLineBreak +
+        ' VALUES (:Titulo, :Descricao, :StatusID, :Prioridade, :DataCriacao)';
 
       lQry.ParamByName('Titulo').AsString := pTarefa.Titulo;
       lQry.ParamByName('Descricao').AsString := pTarefa.Descricao;
 
       // StatusID = 1 "Pendente", uma tarefa nova sempre começará com status "Pendente"
-      lQry.ParamByName('StatusId').AsInteger  := 1;
+      lQry.ParamByName('StatusID').AsInteger := 1;
       lQry.ParamByName('Prioridade').AsInteger := pTarefa.Prioridade;
+      lQry.ParamByName('DataCriacao').AsDateTime := pTarefa.DataCriacao;
 
       lQry.ExecSQL;
     finally
@@ -160,7 +166,7 @@ begin
   end;
 end;
 
-procedure TTarefaAPI.UpdateStatus(const pID, pStatusID: Integer);
+procedure TTarefaAPI.Update(pTarefa: TTarefa);
 var
   lConexao: TFDConnection;
   lQry: TFDQuery;
@@ -171,18 +177,33 @@ begin
     try
       lQry.Connection := lConexao;
 
-      //Se o pStatusID for 3 é atualizado a DataConclusao
       lQry.SQL.Text :=
         ' UPDATE Tarefas ' + sLineBreak +
-        ' SET StatusId = :StatusId, ' + sLineBreak +
-        '    DataConclusao = CASE WHEN :StatusId2 = 3 ' + sLineBreak +
-        '                        THEN GETDATE() ' + sLineBreak +
-        '                        ELSE NULL END ' + sLineBreak +
+        ' SET Titulo        = :Titulo, ' + sLineBreak +
+        '     Descricao     = :Descricao, ' + sLineBreak +
+        '     Prioridade    = :Prioridade, ' + sLineBreak +
+        '     StatusID      = :StatusID, ' + sLineBreak +
+        '     DataCriacao   = :DataCriacao, ' + sLineBreak +
+        '     DataConclusao = :DataConclusao ' + sLineBreak +
         ' WHERE ID = :ID';
 
-      lQry.ParamByName('StatusId').AsInteger := pStatusID;
-      lQry.ParamByName('StatusId2').AsInteger := pStatusID;
-      lQry.ParamByName('ID').AsInteger := pID;
+      lQry.ParamByName('Titulo').AsString := pTarefa.Titulo;
+      lQry.ParamByName('Descricao').AsString := pTarefa.Descricao;
+      lQry.ParamByName('Prioridade').AsInteger := pTarefa.Prioridade;
+      lQry.ParamByName('StatusID').AsInteger := pTarefa.StatusID;
+      lQry.ParamByName('DataCriacao').AsDateTime := pTarefa.DataCriacao;
+
+      if pTarefa.DataConclusao <> 0 then
+      begin
+        lQry.ParamByName('DataConclusao').AsDateTime := pTarefa.DataConclusao;
+      end
+      else
+      begin
+        lQry.ParamByName('DataConclusao').DataType := ftDateTime;
+        lQry.ParamByName('DataConclusao').Clear;
+      end;
+
+      lQry.ParamByName('ID').AsInteger := pTarefa.Id;
 
       lQry.ExecSQL;
     finally
@@ -193,7 +214,7 @@ begin
   end;
 end;
 
-procedure TTarefaAPI.Delete(const pID: Integer);
+procedure TTarefaAPI.Delete(const pIDTarefa: Integer);
 var
   lConexao: TFDConnection;
   lQry: TFDQuery;
@@ -204,7 +225,7 @@ begin
     try
       lQry.Connection := lConexao;
       lQry.SQL.Text := 'DELETE FROM Tarefas WHERE ID = :ID';
-      lQry.ParamByName('ID').AsInteger := pID;
+      lQry.ParamByName('ID').AsInteger := pIDTarefa;
       lQry.ExecSQL;
     finally
       lQry.Free;
@@ -233,9 +254,12 @@ begin
 
       lQry.Open;
 
-      Result.TotalTarefas := lQry.FieldByName('TotalTarefas').AsInteger;
-      Result.MediaPrioridadePendentes := lQry.FieldByName('MediaPrioridadePendentes').AsInteger;
-      Result.ConcluidasUltimos7Dias := lQry.FieldByName('ConcluidasUltimos7Dias').AsInteger;
+      if not lQry.IsEmpty then
+      begin
+        Result.TotalTarefas := lQry.FieldByName('TotalTarefas').AsInteger;
+        Result.MediaPrioridadePendentes := lQry.FieldByName('MediaPrioridadePendentes').AsInteger;
+        Result.ConcluidasUltimos7Dias := lQry.FieldByName('ConcluidasUltimos7Dias').AsInteger;
+      end;
     finally
       lQry.Free;
     end;

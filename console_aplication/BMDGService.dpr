@@ -53,10 +53,7 @@ begin
     lTarefa := lAPI.GetById(StrToIntDef(pReq.Params['id'], 0));
 
     if not Assigned(lTarefa) then
-    begin
-      pRes.Status(THTTPStatus.NotFound).Send('{"erro":"Tarefa não encontrada"}');
-      Exit;
-    end;
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('Tarefa não encontrada');
 
     try
       pRes.Send(TTarefaSerializer.Serializar(lTarefa));
@@ -95,21 +92,23 @@ begin
     lJSON := TJSONObject.ParseJSONValue(pReq.Body) as TJSONObject;
 
     if not Assigned(lJSON) then
-    begin
-      pRes.Status(THTTPStatus.BadRequest).Send('{"erro":"Body inválido"}');
-      Exit;
-    end;
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('Body inválido');
 
     try
       lTarefa := TTarefa.Create;
       try
         lTarefa.Titulo := lJSON.GetValue<string>('titulo');
         lTarefa.Descricao := lJSON.GetValue<string>('descricao', '');
+        lTarefa.StatusId := lJSON.GetValue<Integer>('statusID');
         lTarefa.Prioridade := lJSON.GetValue<Integer>('prioridade');
+        lTarefa.DataCriacao := StrToDate(lJSON.GetValue<string>('dataCriacao'));
 
+        if lJSON.FindValue('dataConclusao') <> nil then
+          lTarefa.DataConclusao := StrToDate(lJSON.GetValue<string>('dataConclusao'));
+
+        TValidacoes.ValidarTarefa(lTarefa);
         lAPI.Add(lTarefa);
 
-        TValidacoes.ValidarCamposTexto(lTarefa.Titulo, lTarefa.Descricao);
         pRes.Status(THTTPStatus.Created).Send('{"mensagem":"Tarefa criada com sucesso"}');
       finally
         lTarefa.Free;
@@ -122,38 +121,39 @@ begin
   THorse.Put('/tarefas/:id', procedure(pReq: THorseRequest; pRes: THorseResponse)
   var
     lJSON: TJSONObject;
-    lID, lStatusID: Integer;
+    lID: Integer;
+    lTarefa: TTarefa;
   begin
     lID := StrToIntDef(pReq.Params['id'], 0);
 
     if lID = 0 then
-    begin
-      pRes.Status(THTTPStatus.BadRequest).Send('{"erro":"ID inválido"}');
-      Exit;
-    end;
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('ID inválido');
 
     lJSON := TJSONObject.ParseJSONValue(pReq.Body) as TJSONObject;
 
     if not Assigned(lJSON) then
-    begin
-      pRes.Status(THTTPStatus.BadRequest).Send('{"erro":"Body inválido"}');
-      Exit;
-    end;
-
-    TValidacoes.ValidarCamposTexto(lJSON.GetValue<string>('titulo'), lJSON.GetValue<string>('descricao'));
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('Body inválido');
 
     try
-      lStatusID := lJSON.GetValue<Integer>('statusId');
+      lTarefa := TTarefa.Create;
+      try
+        lTarefa.ID := lID;
+        lTarefa.Titulo := lJSON.GetValue<string>('titulo');
+        lTarefa.Descricao := lJSON.GetValue<string>('descricao');
+        lTarefa.StatusId := lJSON.GetValue<Integer>('statusID');
+        lTarefa.Prioridade := lJSON.GetValue<Integer>('prioridade');
+        lTarefa.DataCriacao := StrToDate(lJSON.GetValue<string>('dataCriacao'));
 
-      if not (lStatusID in [1, 2, 3]) then
-      begin
-        pRes.Status(THTTPStatus.BadRequest).Send('{"erro":"StatusId deve ser 1, 2 ou 3"}');
-        Exit;
+        if Assigned(lJSON.FindValue('dataConclusao')) then
+          lTarefa.DataConclusao := StrToDate(lJSON.GetValue<string>('dataConclusao'));
+
+        TValidacoes.ValidarTarefa(lTarefa);
+        lAPI.Update(lTarefa);
+
+        pRes.Status(THTTPStatus.Ok).Send('{"mensagem":"Tarefa atualizada com sucesso"}');
+      finally
+        lTarefa.Free;
       end;
-
-      lAPI.UpdateStatus(lID, lStatusID);
-
-      pRes.Status(THTTPStatus.Ok).Send('{"mensagem":"Status atualizado"}');
     finally
       lJSON.Free;
     end;
@@ -166,14 +166,11 @@ begin
     lID := StrToIntDef(pReq.Params['id'], 0);
 
     if lID = 0 then
-    begin
-      pRes.Status(THTTPStatus.BadRequest).Send('{"erro":"ID inválido"}');
-      Exit;
-    end;
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('ID inválido');
 
     lAPI.Delete(lID);
 
-    pRes.Status(THTTPStatus.Ok).Send('{"mensagem":"Tarefa removida"}');
+    pRes.Status(THTTPStatus.Ok).Send('{"mensagem":"Tarefa removida com sucesso"}');
   end);
 
   THorse.Listen(9000,

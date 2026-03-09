@@ -27,7 +27,6 @@ type
     procedure PreencherListaTarefas(pJSON: TJSONArray);
     function GetIDTarefaSelecionada: Integer;
     procedure AbrirFormularioTarefa(const pIDTarefa: Integer = 0);
-    procedure ExibirErro(const pMensagem: string);
     procedure CarregarIndicadores;
     procedure AtualizarTelaComDadosAPI;
   public
@@ -108,22 +107,22 @@ begin
     begin
       lObj := pJSON.Items[li] as TJSONObject;
 
-      // Converte prioridade numérica em texto
       case lObj.GetValue<Integer>('prioridade') of
         1: lPrioridade := 'Baixa';
         2: lPrioridade := 'Média';
         3: lPrioridade := 'Alta';
-      else
-        lPrioridade := '-';
       end;
 
       lItem := lvTarefas.Items.Add;
       lItem.Caption := lObj.GetValue<string>('id');
       lItem.SubItems.Add(lObj.GetValue<string>('titulo'));
       lItem.SubItems.Add(lObj.GetValue<string>('descricao'));
-      lItem.SubItems.Add(lObj.GetValue<string>('statusID'));
+      lItem.SubItems.Add(lObj.GetValue<string>('statusDescricao'));
       lItem.SubItems.Add(lPrioridade);
       lItem.SubItems.Add(lObj.GetValue<string>('dataCriacao'));
+
+      if (lObj.FindValue('dataConclusao') <> nil) then
+        lItem.SubItems.Add(lObj.GetValue<string>('dataConclusao'));
     end;
   finally
     lvTarefas.Items.EndUpdate;
@@ -146,7 +145,7 @@ begin
 
     FIndicadores.TotalTarefas := lJSON.GetValue<Integer>('TotalTarefas');
     FIndicadores.MediaPrioridadePendentes := lJSON.GetValue<Integer>('MediaPrioridadePendentes');
-    FIndicadores.ConcluidasUltimos7Dias   := lJSON.GetValue<Integer>('ConcluidasUltimos7Dias');
+    FIndicadores.ConcluidasUltimos7Dias := lJSON.GetValue<Integer>('ConcluidasUltimos7Dias');
   finally
     lJSON.Free;
   end;
@@ -157,14 +156,18 @@ begin
   if Assigned(lvTarefas.Selected) then
   begin
     AbrirFormularioTarefa(GetIDTarefaSelecionada);
+    AtualizarTelaComDadosAPI;
   end
   else
-    ExibirErro('Selecione uma tarefa!');
+  begin
+    raise Exception.Create('Selecione uma tarefa!');
+  end;
 end;
 
 procedure TGerenciadorTarefas.btnIncluirTarefaClick(Sender: TObject);
 begin
   AbrirFormularioTarefa;
+  AtualizarTelaComDadosAPI;
 end;
 
 function TGerenciadorTarefas.GetIDTarefaSelecionada: Integer;
@@ -173,6 +176,21 @@ begin
 
   if Assigned(lvTarefas.Selected) then
     Result := StrToIntDef(lvTarefas.Selected.Caption, 0);
+end;
+
+procedure TGerenciadorTarefas.AbrirFormularioTarefa(const pIDTarefa: Integer);
+var
+  lForm: TformTarefa;
+begin
+  lForm := TformTarefa.Create(nil);
+  try
+    lForm.TarefaID := pIDTarefa;
+
+    if lForm.ShowModal = mrOk then
+      AtualizarTelaComDadosAPI;
+  finally
+    lForm.Free;
+  end;
 end;
 
 procedure TGerenciadorTarefas.btnIndicadoresTarefasClick(Sender: TObject);
@@ -193,21 +211,6 @@ begin
   end;
 end;
 
-procedure TGerenciadorTarefas.AbrirFormularioTarefa(const pIDTarefa: Integer);
-var
-  lForm: TformTarefa;
-begin
-  lForm := TformTarefa.Create(nil);
-  try
-    lForm.TarefaID := pIDTarefa;
-
-    if lForm.ShowModal = mrOk then
-      CarregarTarefas;
-  finally
-    lForm.Free;
-  end;
-end;
-
 procedure TGerenciadorTarefas.btnRemoverTarefaClick(Sender: TObject);
 var
   lID: Integer;
@@ -216,10 +219,7 @@ begin
   lID := GetIDTarefaSelecionada;
 
   if lID = 0 then
-  begin
-    ShowMessage('Selecione uma tarefa.');
-    Exit;
-  end;
+    raise Exception.Create('Selecione uma tarefa!');
 
   if MessageDlg('Confirma remoção?', mtConfirmation, [mbYes, mbNo], 0) <> mrYes then
     Exit;
@@ -230,15 +230,9 @@ begin
     .Delete;
 
   if lResponse.StatusCode = 200 then
-    CarregarTarefas
+    AtualizarTelaComDadosAPI
   else
     ShowMessage('Erro ao remover: ' + lResponse.Content);
-end;
-
-procedure TGerenciadorTarefas.ExibirErro(const pMensagem: string);
-begin
-  MessageDlg(pMensagem, mtError, [mbOK], 0);
-  Abort;
 end;
 
 end.
